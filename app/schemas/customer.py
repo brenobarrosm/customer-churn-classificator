@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 
+
 class Customer(BaseModel):
+    CustomerID: int
     Age: int
     Gender: str
     Tenure: int

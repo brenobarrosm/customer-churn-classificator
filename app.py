@@ -1,44 +1,19 @@
 import pickle
 import pandas as pd
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 
-# Carregar o modelo salvo com pickle
-with open('resources/models/random_forest.pkl', 'rb') as f:
-    modelo_rf = pickle.load(f)
+BASE_DIR = '/home/breno/PycharmProjects/customer-churn-classificator/resources'
 
-# Carregar o OneHotEncoder salvo
-with open('resources/models/one_hot_encoder.pkl', 'rb') as f:
-    ohe = pickle.load(f)
+df = pd.read_csv(f'{BASE_DIR}/output/prepared_data.csv')
+df.dropna(inplace=True)
+X = df.drop(columns='Churn')
+y = df['Churn']
 
-# Dados de entrada em formato JSON
-input_data = {
-    "Age": 30,
-    "Gender": "Female",
-    "Tenure": 24,
-    "Usage Frequency": 5,
-    "Support Calls": 1,
-    "Payment Delay": 0,
-    "Subscription Type": "Standard",
-    "Contract Length": "Monthly",
-    "Total Spend": 1200.50,
-    "Last Interaction": 7
-}
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Converter o JSON para DataFrame
-df_input = pd.DataFrame([input_data])
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train, y_train)
 
-# Pré-processar os dados
-# Aplicar One Hot Encoding
-df_encoded = ohe.transform(df_input[['Gender', 'SubscriptionType', 'ContractLength']]).toarray()
-df_encoded = pd.DataFrame(df_encoded, columns=ohe.get_feature_names_out())
-
-df_processed = pd.concat([df_input.drop(['Gender', 'SubscriptionType', 'ContractLength'], axis=1), df_encoded], axis=1)
-
-numeric_columns = ['Age', 'Tenure', 'UsageFrequency', 'SupportCalls', 'PaymentDelay', 'TotalSpend', 'LastInteraction']
-scaler = StandardScaler()
-
-df_processed[numeric_columns] = scaler.fit_transform(df_processed[numeric_columns])
-
-prediction = modelo_rf.predict(df_processed)
-
-print("Predição de Churn:", int(prediction[0]))
+with open(f'{BASE_DIR}/models/random_forest.pkl', 'wb') as f:
+    pickle.dump(rf, f)

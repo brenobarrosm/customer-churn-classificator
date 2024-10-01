@@ -1,7 +1,6 @@
 import pickle
 import pandas as pd
 from app.schemas.customer import Customer
-from sklearn.preprocessing import OneHotEncoder
 
 # Carregar o modelo salvo com pickle
 with open('resources/models/random_forest.pkl', 'rb') as f:
@@ -11,15 +10,17 @@ with open('resources/models/random_forest.pkl', 'rb') as f:
 with open('resources/models/standard_scaler.pkl', 'rb') as f:
     scaler = pickle.load(f)
 
-# Inicializar OneHotEncoder
-ohe = OneHotEncoder(handle_unknown='ignore', sparse_output=True)
+# Carregar o OneHotEncoder salvo
+with open('resources/models/one_hot_encoder.pkl', 'rb') as f:
+    ohe = pickle.load(f)
 
 
 def preprocess_data(df: pd.DataFrame):
-    # Aplicar One-Hot Encoding nas colunas categóricas
     categorical_columns = ['Gender', 'Subscription Type', 'Contract Length']
-    df_encoded = ohe.fit_transform(df[categorical_columns])
-    df_encoded = pd.DataFrame(df_encoded.toarray(), columns=ohe.get_feature_names_out())
+    df_encoded = ohe.transform(df[categorical_columns])
+
+    # Convertendo para DataFrame, sem necessidade de usar .toarray() se o sparse_output for False
+    df_encoded = pd.DataFrame(df_encoded, columns=ohe.get_feature_names_out(categorical_columns))
 
     # Concatenar com o DataFrame original e remover as colunas originais
     df = pd.concat([df.drop(categorical_columns, axis=1), df_encoded], axis=1)
